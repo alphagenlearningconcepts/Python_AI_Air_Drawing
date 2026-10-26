@@ -1,0 +1,1516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Python AI: Air Drawing | Alphagen Learning</title>
+
+  <!-- Google Fonts: Poppins & Fira Code -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500;600;700&family=Poppins:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- FontAwesome & Canvas Confetti CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Poppins', 'sans-serif'],
+            mono: ['Fira Code', 'monospace']
+          },
+          colors: {
+            alphagen: {
+              purple: '#5E48C4',
+              purpleDark: '#4A3AAD',
+              purpleMid: '#7B6ED4',
+              purplePale: '#EAE7FE',
+              purpleGhost: '#F5F4FF',
+              yellow: '#FFD071',
+              yellowDark: '#E6B84A',
+              yellowPale: '#FFF3CC',
+              nearBlack: '#1A1A1A',
+              darkGrey: '#404048',
+              midGrey: '#888896',
+              lightGrey: '#F2F2F4',
+              cyan: '#59E4FB',
+              cyanDark: '#055F6E',
+              cyanPale: '#E0FAFE',
+              coral: '#ED5661',
+              coralDark: '#993040',
+              coralPale: '#FFF0F1'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      margin: 0;
+      padding: 12px;
+      background-color: #0f081d;
+      font-family: 'Poppins', sans-serif;
+      color: #1A1A1A;
+      overflow-x: hidden;
+      user-select: none;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .stage-wrapper {
+      width: 100%;
+      max-width: 1280px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .slide-stage {
+      width: 1280px;
+      height: 720px;
+      margin: 0 auto;
+      overflow: hidden;
+      box-sizing: border-box;
+      background-color: #ffffff;
+      border-radius: 28px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.55);
+      border: 1px solid #EAE7FE;
+      transform-origin: top center;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .slide-panel {
+      width: 1280px;
+      height: 654px;
+      padding: 24px 44px 20px 44px;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      box-sizing: border-box;
+      background: #ffffff;
+      overflow: hidden;
+    }
+
+    .slide-panel.active {
+      display: flex;
+    }
+
+    .btn-interactive {
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .btn-interactive:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 10px 20px -5px rgba(94, 72, 196, 0.3);
+    }
+    .btn-interactive:active {
+      transform: translateY(1px) scale(0.98);
+    }
+
+    .nav-bar {
+      width: 1280px;
+      margin: 12px auto 6px auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 16px;
+      transform-origin: top center;
+    }
+
+    .nav-btn {
+      background: #2A1C68;
+      color: #FFD071;
+      border: 2px solid #5E48C4;
+      padding: 10px 24px;
+      border-radius: 14px;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: #5E48C4;
+      color: #ffffff;
+      transform: scale(1.04);
+    }
+    .nav-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+    .nav-btn.finish-btn {
+      background: #FFD071;
+      color: #1A1A1A;
+      border-color: #FFD071;
+    }
+
+    .dot-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #2A1C68;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .dot-indicator.active {
+      background: #FFD071;
+      width: 22px;
+      border-radius: 8px;
+    }
+
+    .spark-wavy-underline {
+      display: inline-block;
+      color: #5E48C4;
+      border-bottom: 4px wavy #FFD071;
+    }
+
+    .quiz-option {
+      background: #ffffff;
+      border: 2px solid #EAE7FE;
+      border-radius: 16px;
+      padding: 10px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #1A1A1A;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      text-align: left;
+    }
+    .quiz-option:hover {
+      border-color: #5E48C4;
+      background: #F5F4FF;
+      transform: translateX(3px);
+    }
+    .quiz-option.selected-correct {
+      background: #f0fdf4 !important;
+      border-color: #22c55e !important;
+      color: #14532d !important;
+    }
+    .quiz-option.selected-wrong {
+      background: #FFF0F1 !important;
+      border-color: #ED5661 !important;
+      color: #993040 !important;
+    }
+
+    .joint-node {
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .joint-node:hover {
+      r: 9;
+      fill: #FFD071;
+      stroke: #1A1A1A;
+      stroke-width: 2.5;
+    }
+    .joint-node.active-joint {
+      r: 10;
+      fill: #59E4FB;
+      stroke: #ffffff;
+      stroke-width: 3;
+    }
+
+    .game-grid-bg {
+      background-color: #0b1329;
+      background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+
+    /* Custom Checkbox Pill */
+    .task-label {
+      transition: all 0.2s ease;
+    }
+    .task-label:has(input:checked) {
+      background-color: #f0fdf4;
+      border-color: #86efac;
+    }
+  </style>
+</head>
+
+<body>
+<div class="stage-wrapper">
+
+  <!-- TOP BRANDING BAR -->
+  <header class="w-full bg-alphagen-purpleDark px-4 py-3 flex flex-wrap items-center justify-between gap-3 text-white shadow-md rounded-2xl mb-3 border border-alphagen-purpleMid">
+    <div class="flex items-center gap-3">
+      <div class="bg-alphagen-yellow text-alphagen-nearBlack px-4 py-2 rounded-xl font-extrabold text-xs md:text-sm shadow-sm flex items-center gap-2">
+        <span class="tracking-wide">ALPHAGEN LEARNING</span>
+      </div>
+      <span class="font-extrabold text-base md:text-lg tracking-tight text-white">
+        Python AI: Air Drawing &amp; Computer Vision
+      </span>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <button onclick="toggleAudio()" id="top-audio-btn" class="bg-alphagen-purple hover:bg-alphagen-purpleMid text-white p-2 rounded-lg transition-all" title="Toggle Sound">
+        <i class="fa-solid fa-volume-high text-base" id="sound-icon"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- 1280x720 FIXED PRESENTATION STAGE -->
+  <div class="slide-stage">
+
+    <!-- Header Navigation Bar inside Stage -->
+    <header class="w-full bg-white border-b border-alphagen-purplePale px-6 py-2 flex items-center justify-between z-50">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-alphagen-purple flex items-center justify-center text-white text-lg shadow-md shadow-alphagen-purple/20">
+          <i class="fa-solid fa-hand-sparkles"></i>
+        </div>
+        <div>
+          <h1 class="font-extrabold text-sm md:text-base text-alphagen-purple tracking-tight leading-tight">Python AI: Air Drawing</h1>
+          <p class="text-[11px] font-semibold text-alphagen-yellowDark">Hand Landmarks &amp; OpenCV Paint Engine</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-1.5" id="header-dots-container"></div>
+
+      <div class="flex items-center gap-3">
+        <span id="slide-counter-pill" class="text-xs font-bold text-alphagen-purple bg-alphagen-purpleGhost px-3 py-1 rounded-full border border-alphagen-purplePale">
+          Slide 1 / 10
+        </span>
+
+        <select id="slide-dropdown" onchange="goToSlide(parseInt(this.value))" class="text-xs font-bold text-alphagen-nearBlack bg-alphagen-lightGrey hover:bg-slate-200 border border-slate-200 px-3 py-1.5 rounded-xl cursor-pointer focus:outline-none focus:border-alphagen-purple transition">
+          <option value="1">1. Welcome Screen</option>
+          <option value="2">2. Try Air Drawing Simulation</option>
+          <option value="3">3. MediaPipe &amp; 21 Landmarks</option>
+          <option value="4">4. Core Concepts Check</option>
+          <option value="5">5. Roadmap &amp; Setup Checklist</option>
+          <option value="6">6. MediaPipe Hands Initialization</option>
+          <option value="7">7. Camera Loop &amp; Flip Frame</option>
+          <option value="8">8. Hand Landmark Processing</option>
+          <option value="9">9. Screen Coordinates &amp; Draw Logic</option>
+          <option value="10">10. Final Mastery Check &amp; Celebrate</option>
+        </select>
+
+        <button onclick="toggleAudio()" id="audio-btn" class="w-8 h-8 rounded-xl bg-alphagen-purpleGhost hover:bg-alphagen-purplePale text-alphagen-purple border border-alphagen-purplePale flex items-center justify-center text-xs transition btn-interactive" title="Toggle Sound">
+          <i class="fa-solid fa-volume-high"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- ================= SLIDE 1: WELCOME SCREEN ================= -->
+    <div id="slide-1" class="slide-panel active justify-center items-center text-center">
+      <div class="inline-flex items-center gap-2 bg-alphagen-purpleGhost border-2 border-alphagen-purplePale text-alphagen-purple text-xs font-extrabold px-6 py-2 rounded-full mb-6 tracking-wider uppercase">
+        <i class="fa-solid fa-wand-magic-sparkles text-alphagen-yellowDark"></i> PYTHON AI MODULE
+      </div>
+
+      <h1 class="text-5xl md:text-6xl font-extrabold text-alphagen-nearBlack mb-6 tracking-tight leading-tight max-w-4xl">
+        Python AI: <span class="spark-wavy-underline">Air Drawing</span>
+      </h1>
+
+     
+      <button onclick="nextSlide(); playSound('pop')" class="bg-alphagen-yellow hover:bg-alphagen-yellowDark text-alphagen-nearBlack font-extrabold text-xl px-12 py-4 rounded-2xl shadow-xl btn-interactive flex items-center gap-3">
+        <span>Start Exploring</span>
+        <i class="fa-solid fa-arrow-right"></i>
+      </button>
+    </div>
+
+    <!-- ================= SLIDE 2: INTERACTIVE AIR DRAWING SIMULATION ================= -->
+    <div id="slide-2" class="slide-panel bg-white justify-between">
+      <div>
+        <span class="text-xs uppercase font-extrabold tracking-wider text-alphagen-purple bg-alphagen-purpleGhost px-4 py-1.5 rounded-md border border-alphagen-purplePale">Interactive Sandbox</span>
+        <h2 class="text-2xl font-extrabold text-alphagen-purple mt-2">Try Air Drawing with Your Finger!</h2>
+        <p class="text-xs text-alphagen-darkGrey font-medium mt-1">Click on the finger icon <span class="text-base">☝️</span> and drag it around the canvas to draw mid-air strokes.</p>
+      </div>
+
+      <div class="grid grid-cols-12 gap-6 my-auto items-stretch">
+        <!-- Interactive Canvas Simulator (7 cols) -->
+        <div class="col-span-7 bg-slate-900 border-2 border-slate-800 rounded-3xl p-4 text-white flex flex-col justify-between shadow-xl">
+          <div>
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2 mb-2 text-xs font-mono">
+              <span class="text-alphagen-yellow font-bold uppercase"><i class="fa-solid fa-paintbrush mr-1"></i> SIMULATED AIR CANVAS</span>
+              <span id="canvas-status-pill" class="text-emerald-400 font-bold">DRAG ☝️ FINGER TO DRAW</span>
+            </div>
+
+            <!-- Drawing Canvas Window with Drag-and-Draw Finger -->
+            <div class="game-grid-bg h-64 rounded-2xl border-2 border-slate-700 relative overflow-hidden select-none" id="air-sim-box">
+              <canvas id="air-draw-canvas" width="670" height="256" style="width: 100%; height: 100%; display: block;"></canvas>
+              <!-- Draggable Finger Emoji -->
+              <div id="finger-drag-handle" class="absolute cursor-grab active:cursor-grabbing text-3xl transition-transform duration-75 select-none pointer-events-auto" style="left: 310px; top: 100px; transform: translate(-30%, -30%); filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6));">
+                ☝️
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-2">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-mono text-slate-400">Brush Color:</span>
+              <button onclick="setSimColor('#59E4FB')" class="w-6 h-6 rounded-full bg-cyan-400 border-2 border-white btn-interactive"></button>
+              <button onclick="setSimColor('#10B981')" class="w-6 h-6 rounded-full bg-emerald-500 border-2 border-white btn-interactive"></button>
+              <button onclick="setSimColor('#FFD071')" class="w-6 h-6 rounded-full bg-amber-300 border-2 border-white btn-interactive"></button>
+              <button onclick="setSimColor('#ED5661')" class="w-6 h-6 rounded-full bg-rose-500 border-2 border-white btn-interactive"></button>
+            </div>
+            <button onclick="clearAirSimCanvas()" class="bg-slate-800 hover:bg-slate-700 text-xs px-3 py-1 rounded-lg text-slate-300 font-mono btn-interactive">
+              Clear Board ↺
+            </button>
+          </div>
+        </div>
+
+        <!-- Reflection & Use-Cases (5 cols) -->
+        <div class="col-span-5 bg-alphagen-purpleGhost border-2 border-alphagen-purplePale rounded-3xl p-5 flex flex-col justify-between">
+          <div class="space-y-3">
+            <div>
+              <span class="text-[11px] font-extrabold text-alphagen-purple uppercase block mb-1">OBSERVATION CHECK</span>
+              <h3 class="font-extrabold text-xs text-alphagen-nearBlack mb-1">What did you observe?</h3>
+              <textarea placeholder="Type your observation here..." class="w-full h-16 p-2 text-xs bg-white rounded-xl border border-alphagen-purplePale focus:border-alphagen-purple outline-none font-sans resize-none"></textarea>
+            </div>
+
+            <div>
+              <span class="text-[11px] font-extrabold text-alphagen-yellowDark uppercase block mb-1">REAL-WORLD APPLICATIONS</span>
+              <h3 class="font-extrabold text-xs text-alphagen-nearBlack mb-1">Where can Air Drawing be used?</h3>
+              <div class="grid grid-cols-2 gap-2 text-xs font-semibold text-slate-700">
+                <div class="bg-white p-2 rounded-xl border border-alphagen-purplePale flex items-center gap-2">
+                  <i class="fa-solid fa-chalkboard-user text-purple-600"></i>
+                  <span>Virtual Whiteboards</span>
+                </div>
+                <div class="bg-white p-2 rounded-xl border border-alphagen-purplePale flex items-center gap-2">
+                  <i class="fa-solid fa-kiosk text-cyan-600"></i>
+                  <span>Touchless Kiosks</span>
+                </div>
+                <div class="bg-white p-2 rounded-xl border border-alphagen-purplePale flex items-center gap-2">
+                  <i class="fa-solid fa-gamepad text-amber-600"></i>
+                  <span>VR Gesture Control</span>
+                </div>
+                <div class="bg-white p-2 rounded-xl border border-alphagen-purplePale flex items-center gap-2">
+                  <i class="fa-solid fa-universal-access text-emerald-600"></i>
+                  <span>Accessibility Tools</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+         
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= SLIDE 3: MEDIAPIPE & 21 HAND LANDMARKS ================= -->
+    <div id="slide-3" class="slide-panel bg-white justify-between">
+      <div>
+        <span class="text-xs uppercase font-extrabold tracking-wider text-alphagen-purple bg-alphagen-purpleGhost px-4 py-1.5 rounded-md border border-alphagen-purplePale">AI Framework</span>
+        <h2 class="text-2xl font-extrabold text-alphagen-purple mt-2">What is MediaPipe &amp; Landmark Detection?</h2>
+        <p class="text-xs text-alphagen-darkGrey font-medium mt-1">Google MediaPipe is an ML pipeline that detects <strong>21 3D landmarks</strong> on human hands in real time.</p>
+      </div>
+
+      <div class="grid grid-cols-12 gap-6 my-auto items-stretch">
+        <!-- SVG Hand Skeleton (6 cols) -->
+        <div class="col-span-6 bg-slate-900 border-2 border-slate-800 rounded-3xl p-4 text-white flex flex-col justify-between shadow-xl">
+          <div>
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2 mb-2 text-xs font-mono">
+              <span class="text-alphagen-yellow font-bold uppercase"><i class="fa-solid fa-hand mr-1"></i> 21 HAND LANDMARKS</span>
+              <span class="text-emerald-400 font-bold">CLICK ANY JOINT TO INSPECT</span>
+            </div>
+
+            <!-- Interactive Hand SVG Diagram -->
+            <div class="w-full h-72 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-center p-2">
+              <svg viewBox="0 0 320 300" class="w-full h-full">
+                <!-- Palm & Bone Lines -->
+                <path d="M160,270 L115,220 L75,175 L50,140 L35,115" stroke="#334155" stroke-width="3" fill="none"></path>
+                <path d="M160,270 L125,170 L110,115 L100,75 L95,45" stroke="#334155" stroke-width="3" fill="none"></path>
+                <path d="M160,270 L160,160 L160,105 L160,65 L160,35" stroke="#334155" stroke-width="3" fill="none"></path>
+                <path d="M160,270 L195,170 L210,115 L220,80 L225,50" stroke="#334155" stroke-width="3" fill="none"></path>
+                <path d="M160,270 L225,200 L245,160 L260,130 L270,105" stroke="#334155" stroke-width="3" fill="none"></path>
+                <path d="M115,220 L125,170 L160,160 L195,170 L225,200 Z" stroke="#475569" stroke-width="2" fill="#1e293b" fill-opacity="0.3"></path>
+
+                <!-- 21 Interactive Joint Circles -->
+                <!-- Wrist (0) -->
+                <circle cx="160" cy="270" r="7" fill="#ED5661" class="joint-node" onclick="inspectJoint(0, 'Wrist', 'Base root anchor point of the palm (x, y, z).')"></circle>
+                
+                <!-- Thumb (1..4) -->
+                <circle cx="115" cy="220" r="6" fill="#7B6ED4" class="joint-node" onclick="inspectJoint(1, 'Thumb CMC', 'Thumb carpometacarpal joint.')"></circle>
+                <circle cx="75" cy="175" r="6" fill="#7B6ED4" class="joint-node" onclick="inspectJoint(2, 'Thumb MCP', 'Thumb metacarpophalangeal joint.')"></circle>
+                <circle cx="50" cy="140" r="6" fill="#7B6ED4" class="joint-node" onclick="inspectJoint(3, 'Thumb IP', 'Thumb interphalangeal joint.')"></circle>
+                <circle cx="35" cy="115" r="7" fill="#FFD071" class="joint-node" onclick="inspectJoint(4, 'Thumb Tip', 'Tip of the thumb finger.')"></circle>
+
+                <!-- Index Finger (5..8) -->
+                <circle cx="125" cy="170" r="6" fill="#7B6ED4" class="joint-node" onclick="inspectJoint(5, 'Index Finger MCP', 'Index finger base knuckle.')"></circle>
+                <circle cx="110" cy="115" r="6" fill="#7B6ED4" class="joint-node" onclick="inspectJoint(6, 'Index Finger PIP', 'Index finger middle knuckle.')"></circle>
+                <circle cx="100" cy="75" r="6" fill="#7B6ED4" class="joint-node" onclick="inspectJoint(7, 'Index Finger DIP', 'Index finger upper knuckle.')"></circle>
+                <!-- INDEX TIP (8) -->
+                <circle id="joint-8-node" cx="95" cy="45" r="9" fill="#59E4FB" stroke="#ffffff" stroke-width="2" class="joint-node active-joint" onclick="inspectJoint(8, 'Index Finger Tip (Drawing Pen!)', 'Primary pen pointer! Landmark 8 gives cx, cy coordinates to draw.')"></circle>
+
+                <!-- Middle Finger (9..12) -->
+                <circle cx="160" cy="160" r="6" fill="#7B6ED4" class="joint-node" onclick="inspectJoint(9, 'Middle Finger MCP', 'Middle finger base knuckle.')"></circle>
+                <circle cx="160" cy="105" r="6" fill="#7B6ED4" class="joint-node" onclick="inspectJoint(10, 'Middle Finger PIP', 'Middle finger middle knuckle.')"></circle>
+                <circle cx="160" cy="65" r="6" fill="#7B6ED4" class="joint-node" onclick="inspectJoint(11, 'Middle Finger DIP', 'Middle finger upper knuckle.')"></circle>
+                <circle cx="160" cy="35" r="7" fill="#FFD071" class="joint-node" onclick="inspectJoint(12, 'Middle Finger Tip', 'Tip of the middle finger.')"></circle>
+
+                <!-- Ring Finger (13..16) -->
+                <circle cx="195" cy="170" r="6" fill="#7B6ED4" class="joint-node" onclick="inspectJoint(13, 'Ring Finger MCP', 'Ring finger base knuckle.')"></circle>
+                <circle cx="210" cy="115" r="6" fill="#7B6ED4" class="joint-node" onclick="inspectJoint(14, 'Ring Finger PIP', 'Ring finger middle knuckle.')"></circle>
+                <circle cx="220" cy="80" r="6" fill="#7B6ED4" class="joint-node" onclick="inspectJoint(15, 'Ring Finger DIP', 'Ring finger upper knuckle.')"></circle>
+                <circle cx="225" cy="50" r="7" fill="#FFD071" class="joint-node" onclick="inspectJoint(16, 'Ring Finger Tip', 'Tip of the ring finger.')"></circle>
+
+                <!-- Pinky Finger (17..20) -->
+                <circle cx="225" cy="200" r="6" fill="#7B6ED4" class="joint-node" onclick="inspectJoint(17, 'Pinky MCP', 'Pinky base knuckle.')"></circle>
+                <circle cx="245" cy="160" r="6" fill="#7B6ED4" class="joint-node" onclick="inspectJoint(18, 'Pinky PIP', 'Pinky middle knuckle.')"></circle>
+                <circle cx="260" cy="130" r="6" fill="#7B6ED4" class="joint-node" onclick="inspectJoint(19, 'Pinky DIP', 'Pinky upper knuckle.')"></circle>
+                <circle cx="270" cy="105" r="7" fill="#FFD071" class="joint-node" onclick="inspectJoint(20, 'Pinky Tip', 'Tip of the pinky finger.')"></circle>
+              </svg>
+            </div>
+          </div>
+
+          <p class="text-[11px] text-slate-400 font-sans text-center mt-1">
+            Click on joint <strong class="text-cyan-300">#8</strong> (Index Tip) — our virtual drawing pen!
+          </p>
+        </div>
+
+        <!-- Joint Details Card (6 cols) -->
+        <div class="col-span-6 bg-alphagen-purpleGhost border-2 border-alphagen-purplePale rounded-3xl p-5 flex flex-col justify-between">
+          <div>
+            <span class="text-xs font-extrabold text-alphagen-purple uppercase tracking-wider block mb-2">SELECTED LANDMARK INSPECTOR</span>
+            
+            <div class="bg-white p-4 rounded-2xl border-2 border-alphagen-purplePale shadow-sm space-y-2.5">
+              <div class="flex items-center justify-between border-b border-alphagen-purplePale pb-2.5">
+                <div>
+                  <span class="text-[11px] text-slate-500 uppercase font-bold block">Landmark Name</span>
+                  <h3 id="joint-name-display" class="text-base font-extrabold text-alphagen-purple">Index Finger Tip</h3>
+                </div>
+                <div class="text-center bg-alphagen-purple text-white px-3.5 py-1 rounded-xl">
+                  <span class="text-[9px] uppercase font-bold block">Index ID</span>
+                  <span id="joint-id-display" class="text-lg font-black font-mono">8</span>
+                </div>
+              </div>
+
+              <div>
+                <span class="text-[11px] text-slate-500 uppercase font-bold block mb-0.5">Role in Air Drawing:</span>
+                <p id="joint-desc-display" class="text-xs text-slate-700 leading-relaxed font-medium">
+                  Primary pen pointer! Landmark 8 gives cx, cy coordinates to draw.
+                </p>
+              </div>
+
+              <div class="bg-slate-900 p-2.5 rounded-xl text-emerald-400 font-mono text-xs">
+                index_tip = hand_landmarks.landmark[<span id="joint-code-idx" class="text-yellow-300 font-bold">8</span>]
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white p-2.5 rounded-xl border border-alphagen-purplePale text-xs font-bold text-alphagen-purple text-center">
+            ⭐ <strong>Key Rule:</strong> Landmark <strong>8</strong> is always the <strong>Index Fingertip</strong>!
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= SLIDE 4: CORE CONCEPTS CHECK (SHUFFLED OPTIONS) ================= -->
+    <div id="slide-4" class="slide-panel bg-white justify-between">
+      <div>
+        <span class="text-xs uppercase font-extrabold tracking-wider text-alphagen-purple bg-alphagen-purpleGhost px-4 py-1.5 rounded-md border border-alphagen-purplePale">Concepts Check</span>
+        <h2 class="text-2xl font-extrabold text-alphagen-purple mt-2">Core Concepts You Need to Remember</h2>
+       
+      </div>
+
+      <div class="grid grid-cols-2 gap-3.5 my-auto">
+        <!-- Q1: Empty Canvas -->
+        <div class="bg-alphagen-purpleGhost border-2 border-alphagen-purplePale p-3.5 rounded-2xl flex flex-col justify-between">
+          <div>
+            <span class="bg-alphagen-purple text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase inline-block mb-1">QUESTION 1</span>
+            <h4 class="font-extrabold text-xs text-alphagen-nearBlack mb-1.5">How do we create an empty black canvas?</h4>
+            <div class="space-y-1">
+              <button onclick="checkConceptQ(this, false, 'c1')" class="quiz-option font-mono">cv2.createCanvas(w, h, 3)</button>
+              <button onclick="checkConceptQ(this, false, 'c1')" class="quiz-option font-mono">np.ones((h, w, 3), dtype='uint8')</button>
+              <button onclick="checkConceptQ(this, true, 'c1')" class="quiz-option font-mono">np.zeros((h, w, 3), dtype=np.uint8)</button>
+              <button onclick="checkConceptQ(this, false, 'c1')" class="quiz-option font-mono">np.empty((h, w), dtype='int')</button>
+            </div>
+          </div>
+          <div id="c1-fb" class="hidden text-[11px] font-bold mt-1 text-center"></div>
+        </div>
+
+        <!-- Q2: Draw Circle -->
+        <div class="bg-alphagen-purpleGhost border-2 border-alphagen-purplePale p-3.5 rounded-2xl flex flex-col justify-between">
+          <div>
+            <span class="bg-alphagen-purple text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase inline-block mb-1">QUESTION 2</span>
+            <h4 class="font-extrabold text-xs text-alphagen-nearBlack mb-1.5">Which OpenCV function draws a circle?</h4>
+            <div class="space-y-1">
+              <button onclick="checkConceptQ(this, false, 'c2')" class="quiz-option font-mono">cv2.drawCircle(frame, (cx, cy), radius)</button>
+              <button onclick="checkConceptQ(this, true, 'c2')" class="quiz-option font-mono">cv2.circle(frame, (cx, cy), radius, color, -1)</button>
+              <button onclick="checkConceptQ(this, false, 'c2')" class="quiz-option font-mono">cv2.plot_circle(frame, center, color)</button>
+              <button onclick="checkConceptQ(this, false, 'c2')" class="quiz-option font-mono">cv2.addCircle(frame, (cx, cy), color)</button>
+            </div>
+          </div>
+          <div id="c2-fb" class="hidden text-[11px] font-bold mt-1 text-center"></div>
+        </div>
+
+        <!-- Q3: Draw Line -->
+        <div class="bg-alphagen-purpleGhost border-2 border-alphagen-purplePale p-3.5 rounded-2xl flex flex-col justify-between">
+          <div>
+            <span class="bg-alphagen-purple text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase inline-block mb-1">QUESTION 3</span>
+            <h4 class="font-extrabold text-xs text-alphagen-nearBlack mb-1.5">Which function connects two points with a line?</h4>
+            <div class="space-y-1">
+              <button onclick="checkConceptQ(this, false, 'c3')" class="quiz-option font-mono">cv2.drawLine(canvas, pt1, pt2, color)</button>
+              <button onclick="checkConceptQ(this, false, 'c3')" class="quiz-option font-mono">cv2.connect(canvas, pt1, pt2, thick)</button>
+              <button onclick="checkConceptQ(this, false, 'c3')" class="quiz-option font-mono">cv2.strokeLine(canvas, (px, py), (cx, cy))</button>
+              <button onclick="checkConceptQ(this, true, 'c3')" class="quiz-option font-mono">cv2.line(canvas, (px, py), (cx, cy), color, thick)</button>
+            </div>
+          </div>
+          <div id="c3-fb" class="hidden text-[11px] font-bold mt-1 text-center"></div>
+        </div>
+
+        <!-- Q4: Blend Frames -->
+        <div class="bg-alphagen-purpleGhost border-2 border-alphagen-purplePale p-3.5 rounded-2xl flex flex-col justify-between">
+          <div>
+            <span class="bg-alphagen-purple text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase inline-block mb-1">QUESTION 4</span>
+            <h4 class="font-extrabold text-xs text-alphagen-nearBlack mb-1.5">How do you combine the canvas onto the camera frame?</h4>
+            <div class="space-y-1">
+              <button onclick="checkConceptQ(this, false, 'c4')" class="quiz-option font-mono">cv2.blend(frame, canvas)</button>
+              <button onclick="checkConceptQ(this, true, 'c4')" class="quiz-option font-mono">cv2.add(frame, canvas)</button>
+              <button onclick="checkConceptQ(this, false, 'c4')" class="quiz-option font-mono">cv2.mergeImages(frame, canvas)</button>
+              <button onclick="checkConceptQ(this, false, 'c4')" class="quiz-option font-mono">frame + canvas</button>
+            </div>
+          </div>
+          <div id="c4-fb" class="hidden text-[11px] font-bold mt-1 text-center"></div>
+        </div>
+      </div>
+
+     
+    </div>
+
+    <!-- ================= SLIDE 5: ROADMAP & SETUP CHECKLIST ================= -->
+    <div id="slide-5" class="slide-panel bg-white justify-between">
+      <div>
+        <span class="text-xs uppercase font-extrabold tracking-wider text-alphagen-purple bg-alphagen-purpleGhost px-4 py-1.5 rounded-md border border-alphagen-purplePale">Step-by-Step Roadmap</span>
+        <h2 class="text-2xl font-extrabold text-alphagen-purple mt-2">Project Setup Checklist</h2>
+       
+      </div>
+
+      <div class="grid grid-cols-12 gap-8 my-auto items-stretch">
+        <!-- Checklist on Left (8 cols) -->
+        <div class="col-span-8 bg-alphagen-purpleGhost border-2 border-alphagen-purplePale rounded-3xl p-5 flex flex-col justify-between">
+          <h3 class="font-extrabold text-xs text-alphagen-purple uppercase tracking-wider mb-2">
+            <i class="fa-solid fa-list-check mr-1.5"></i> Initial Setup Milestones:
+          </h3>
+
+          <div class="space-y-2 text-xs">
+            <label class="task-label bg-white border-2 border-alphagen-purplePale rounded-xl p-2 flex gap-3 items-center cursor-pointer hover:border-alphagen-purple transition">
+              <input type="checkbox" class="step-check w-4 h-4 accent-purple-600 cursor-pointer" onchange="updateSetupSteps()">
+              <span class="font-bold text-slate-800">1. Import OpenCV (<code class="font-mono text-purple-700">cv2</code>) and NumPy (<code class="font-mono text-purple-700">np</code>)</span>
+            </label>
+
+            <label class="task-label bg-white border-2 border-alphagen-purplePale rounded-xl p-2 flex gap-3 items-center cursor-pointer hover:border-alphagen-purple transition">
+              <input type="checkbox" class="step-check w-4 h-4 accent-purple-600 cursor-pointer" onchange="updateSetupSteps()">
+              <span class="font-bold text-slate-800">2. Import MediaPipe: <code class="font-mono text-purple-700 font-bold">import mediapipe as mp</code></span>
+            </label>
+
+            <label class="task-label bg-white border-2 border-alphagen-purplePale rounded-xl p-2 flex gap-3 items-center cursor-pointer hover:border-alphagen-purple transition">
+              <input type="checkbox" class="step-check w-4 h-4 accent-purple-600 cursor-pointer" onchange="updateSetupSteps()">
+              <span class="font-bold text-slate-800">3. Print instructions for user (e.g., sit upright, keep hand clearly visible in front of webcam)</span>
+            </label>
+
+            <label class="task-label bg-white border-2 border-alphagen-purplePale rounded-xl p-2 flex gap-3 items-center cursor-pointer hover:border-alphagen-purple transition">
+              <input type="checkbox" class="step-check w-4 h-4 accent-purple-600 cursor-pointer" onchange="updateSetupSteps()">
+              <span class="font-bold text-slate-800">4. Capture the video stream from webcam</span>
+            </label>
+
+            <label class="task-label bg-white border-2 border-alphagen-purplePale rounded-xl p-2 flex gap-3 items-center cursor-pointer hover:border-alphagen-purple transition">
+              <input type="checkbox" class="step-check w-4 h-4 accent-purple-600 cursor-pointer" onchange="updateSetupSteps()">
+              <span class="font-bold text-slate-800">5. Read the initial frame and check for success</span>
+            </label>
+
+            <label class="task-label bg-white border-2 border-alphagen-purplePale rounded-xl p-2 flex gap-3 items-center cursor-pointer hover:border-alphagen-purple transition">
+              <input type="checkbox" class="step-check w-4 h-4 accent-purple-600 cursor-pointer" onchange="updateSetupSteps()">
+              <span class="font-bold text-slate-800">6. Extract height, width, and channel of the frame (<code class="font-mono text-purple-700">h, w, c = frame.shape</code>)</span>
+            </label>
+
+            <label class="task-label bg-white border-2 border-alphagen-purplePale rounded-xl p-2 flex gap-3 items-center cursor-pointer hover:border-alphagen-purple transition">
+              <input type="checkbox" class="step-check w-4 h-4 accent-purple-600 cursor-pointer" onchange="updateSetupSteps()">
+              <span class="font-bold text-slate-800">7. Create empty black canvas using the same height and width (<code class="font-mono text-purple-700">np.zeros()</code>)</span>
+            </label>
+          </div>
+
+          <div id="setup-checklist-status" class="mt-2 p-2 bg-white border border-alphagen-purplePale rounded-xl text-xs font-bold text-alphagen-purple text-center">
+            Progress: <span id="setup-step-count" class="text-alphagen-yellowDark font-extrabold">0 / 7</span> Tasks Completed
+          </div>
+        </div>
+
+        <!-- Progress Tracker Card on Right (4 cols) -->
+        
+      </div>
+    </div>
+
+    <!-- ================= SLIDE 6: INITIALIZING MEDIAPIPE HANDS ================= -->
+    <div id="slide-6" class="slide-panel bg-white justify-between">
+      <div>
+        <span class="text-xs uppercase font-extrabold tracking-wider text-alphagen-purple bg-alphagen-purpleGhost px-4 py-1.5 rounded-md border border-alphagen-purplePale">MediaPipe Core</span>
+        <h2 class="text-2xl font-extrabold text-alphagen-purple mt-2">Initialize MediaPipe Hands</h2>
+      
+      </div>
+
+      <div class="grid grid-cols-12 gap-8 my-auto items-stretch">
+        <!-- Code on Left (6 cols) -->
+        <div class="col-span-6 bg-slate-900 border-2 border-slate-800 rounded-3xl p-5 text-white flex flex-col justify-between shadow-xl">
+          <div>
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2 mb-3 text-xs font-mono">
+              <span class="text-alphagen-yellow font-bold uppercase">INITIALIZATION CODE</span>
+              <span class="text-emerald-400 font-bold">PYTHON</span>
+            </div>
+
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 font-mono text-xs text-emerald-400 leading-relaxed space-y-3">
+              <div>
+                <span class="text-slate-500"># 1. Access the Hands solution module:</span><br>
+                mp_hands = mp.solutions.hands
+              </div>
+              <div>
+                <span class="text-slate-500"># 2. Instantiate Hands detector with confidence:</span><br>
+                hands = mp_hands.Hands(min_detection_confidence=0.7)
+              </div>
+              <div>
+                <span class="text-slate-500"># 3. Load Drawing Utilities helper:</span><br>
+                mp_draw = mp.solutions.drawing_utils
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-black/60 p-2.5 rounded-xl border border-slate-800 text-center text-xs font-mono text-alphagen-yellow">
+            min_detection_confidence=0.7 requires 70% model certainty!
+          </div>
+        </div>
+
+        <!-- Checkbox Milestones on Right (6 cols) -->
+        <div class="col-span-6 bg-alphagen-purpleGhost border-2 border-alphagen-purplePale rounded-3xl p-5 flex flex-col justify-between">
+          <div>
+            <span class="text-xs font-extrabold text-alphagen-purple uppercase tracking-wider block mb-2">STEP 6 CHECKBOXES: INITIALIZE HAND TRACKER</span>
+
+            <div class="space-y-2 text-xs">
+              <label class="task-label bg-white border-2 border-alphagen-purplePale rounded-xl p-3 flex gap-3 items-center cursor-pointer hover:border-alphagen-purple transition">
+                <input type="checkbox" class="step6-check w-4 h-4 accent-purple-600 cursor-pointer" onchange="updateStep6Count()">
+                <div>
+                  <strong class="text-slate-800 block">Initialize <code class="font-mono text-purple-700">mp_hands</code></strong>
+                  <span class="text-slate-500 text-[11px]">Load <code class="font-mono">mp.solutions.hands</code> module</span>
+                </div>
+              </label>
+
+              <label class="task-label bg-white border-2 border-alphagen-purplePale rounded-xl p-3 flex gap-3 items-center cursor-pointer hover:border-alphagen-purple transition">
+                <input type="checkbox" class="step6-check w-4 h-4 accent-purple-600 cursor-pointer" onchange="updateStep6Count()">
+                <div>
+                  <strong class="text-slate-800 block">Create <code class="font-mono text-purple-700">hands</code> object</strong>
+                  <span class="text-slate-500 text-[11px]">Set <code class="font-mono">min_detection_confidence=0.7</code></span>
+                </div>
+              </label>
+
+              <label class="task-label bg-white border-2 border-alphagen-purplePale rounded-xl p-3 flex gap-3 items-center cursor-pointer hover:border-alphagen-purple transition">
+                <input type="checkbox" class="step6-check w-4 h-4 accent-purple-600 cursor-pointer" onchange="updateStep6Count()">
+                <div>
+                  <strong class="text-slate-800 block">Initialize <code class="font-mono text-purple-700">mp_draw</code></strong>
+                  <span class="text-slate-500 text-[11px]">Assign drawing utilities helper</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= SLIDE 7: LOOP, CAMERA READ & FLIP FRAME ================= -->
+    <div id="slide-7" class="slide-panel bg-white justify-between">
+      <div>
+        <span class="text-xs uppercase font-extrabold tracking-wider text-alphagen-purple bg-alphagen-purpleGhost px-4 py-1.5 rounded-md border border-alphagen-purplePale">Camera Loop</span>
+        <h2 class="text-2xl font-extrabold text-alphagen-purple mt-2">Camera Loop &amp; Flip Frame</h2>
+       
+      </div>
+
+      <div class="grid grid-cols-12 gap-8 my-auto items-stretch">
+        <!-- Checklist on Left (7 cols) -->
+        <div class="col-span-7 bg-alphagen-purpleGhost border-2 border-alphagen-purplePale rounded-3xl p-5 flex flex-col justify-between">
+          <div>
+            <span class="text-xs font-extrabold text-alphagen-purple uppercase tracking-wider block mb-2">WORKFLOW CHECKLIST</span>
+
+            <div class="space-y-2 text-xs">
+              <label class="task-label bg-white border-2 border-alphagen-purplePale rounded-xl p-2 flex gap-3 items-center cursor-pointer hover:border-alphagen-purple transition">
+                <input type="checkbox" class="loop-check w-4 h-4 accent-purple-600 cursor-pointer" onchange="updateLoopSteps()">
+                <span class="font-bold text-slate-800">1. Initialize previous finger positions <code class="font-mono text-purple-700">prev_x, prev_y = 0, 0</code></span>
+              </label>
+
+              <label class="task-label bg-white border-2 border-alphagen-purplePale rounded-xl p-2 flex gap-3 items-center cursor-pointer hover:border-alphagen-purple transition">
+                <input type="checkbox" class="loop-check w-4 h-4 accent-purple-600 cursor-pointer" onchange="updateLoopSteps()">
+                <span class="font-bold text-slate-800">2. Set up drawing brush color and stroke thickness variables</span>
+              </label>
+
+              <label class="task-label bg-white border-2 border-alphagen-purplePale rounded-xl p-2 flex gap-3 items-center cursor-pointer hover:border-alphagen-purple transition">
+                <input type="checkbox" class="loop-check w-4 h-4 accent-purple-600 cursor-pointer" onchange="updateLoopSteps()">
+                <span class="font-bold text-slate-800">3. Start the continuous camera capture loop (<code class="font-mono text-purple-700">while True:</code>)</span>
+              </label>
+
+              <label class="task-label bg-white border-2 border-alphagen-purplePale rounded-xl p-2 flex gap-3 items-center cursor-pointer hover:border-alphagen-purple transition">
+                <input type="checkbox" class="loop-check w-4 h-4 accent-purple-600 cursor-pointer" onchange="updateLoopSteps()">
+                <span class="font-bold text-slate-800">4. Read camera frame; if not found, break out of loop</span>
+              </label>
+
+              <label class="task-label bg-white border-2 border-alphagen-purplePale rounded-xl p-2 flex gap-3 items-center cursor-pointer hover:border-alphagen-purple transition">
+                <input type="checkbox" class="loop-check w-4 h-4 accent-purple-600 cursor-pointer" onchange="updateLoopSteps()">
+                <span class="font-bold text-slate-800">5. Flip frame horizontally using: <code class="font-mono text-purple-700 font-bold">frame = cv2.flip(frame, 1)</code></span>
+              </label>
+
+              <label class="task-label bg-white border-2 border-alphagen-purplePale rounded-xl p-2 flex gap-3 items-center cursor-pointer hover:border-alphagen-purple transition">
+                <input type="checkbox" class="loop-check w-4 h-4 accent-purple-600 cursor-pointer" onchange="updateLoopSteps()">
+                <span class="font-bold text-slate-800">6. Convert BGR frame to RGB for MediaPipe</span>
+              </label>
+            </div>
+          </div>
+
+          <div id="loop-checklist-status" class="mt-2 p-2 bg-white border border-alphagen-purplePale rounded-xl text-xs font-bold text-alphagen-purple text-center">
+            Progress: <span id="loop-step-count" class="text-alphagen-yellowDark font-extrabold">0 / 6</span> Milestones Completed
+          </div>
+        </div>
+
+        <!-- Interactive Flip Visualizer on Right (5 cols) -->
+        <div class="col-span-5 bg-slate-900 border-2 border-slate-800 rounded-3xl p-5 text-white flex flex-col justify-between shadow-xl">
+          <div>
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2 mb-3 text-xs font-mono">
+              <span class="text-alphagen-yellow font-bold uppercase">WHY WE FLIP THE FRAME</span>
+              <span class="text-emerald-400 font-bold">cv2.flip(frame, 1)</span>
+            </div>
+
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+              <p class="text-xs text-slate-300 font-sans leading-relaxed">
+                Webcams naturally mirror your view. Moving your hand right looks like it is moving left on screen!
+              </p>
+
+              <!-- Interactive Flip Preview -->
+              <div class="border border-slate-700 rounded-xl p-3 text-center bg-slate-900">
+                <div id="flip-preview-hand" class="text-4xl transition-transform duration-300 inline-block">
+                  👉
+                </div>
+                <div class="mt-2">
+                  <button onclick="toggleFlipPreview()" class="bg-alphagen-purple hover:bg-alphagen-purpleMid text-white text-xs px-3 py-1.5 rounded-lg font-mono btn-interactive">
+                    Toggle Flip Preview ⇄
+                  </button>
+                </div>
+                <span id="flip-preview-label" class="text-[11px] text-emerald-400 font-mono block mt-1">Flipped (Natural Selfie Mode)</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-black/60 p-2.5 rounded-xl border border-slate-800 text-center text-xs font-mono text-alphagen-yellow">
+            frame = cv2.flip(frame, 1) flips horizontally
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= SLIDE 8: HAND PROCESSING & LANDMARKS ================= -->
+    <div id="slide-8" class="slide-panel bg-white justify-between">
+      <div>
+        <span class="text-xs uppercase font-extrabold tracking-wider text-alphagen-purple bg-alphagen-purpleGhost px-4 py-1.5 rounded-md border border-alphagen-purplePale">MediaPipe Processing</span>
+        <h2 class="text-2xl font-extrabold text-alphagen-purple mt-2">Processing Hands &amp; Landmark Extraction</h2>
+       
+      </div>
+
+      <div class="grid grid-cols-12 gap-8 my-auto items-stretch">
+        <!-- Code on Left (6 cols) -->
+        <div class="col-span-6 bg-slate-900 border-2 border-slate-800 rounded-3xl p-5 text-white flex flex-col justify-between shadow-xl">
+          <div>
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2 mb-3 text-xs font-mono">
+              <span class="text-alphagen-yellow font-bold uppercase">HAND PROCESSING CODE</span>
+              <span class="text-emerald-400 font-bold">PYTHON</span>
+            </div>
+
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 font-mono text-xs leading-relaxed space-y-2">
+              <div class="text-emerald-400">
+                <span class="text-slate-500"># Process frame with hands model:</span><br>
+                results = hands.process(rgb_frame)
+              </div>
+              <div class="text-emerald-400 mt-2">
+                <span class="text-purple-400 font-bold">if</span> results.multi_hand_landmarks:<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-purple-400 font-bold">for</span> hand_landmarks <span class="text-purple-400 font-bold">in</span> results.multi_hand_landmarks:<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mp_draw.draw_landmarks(<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;frame, hand_landmarks, mp_hands.HAND_CONNECTIONS<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)<br><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-slate-500"># Extract index fingertip landmark:</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;index_tip = hand_landmarks.landmark[<span class="text-amber-300 font-bold">8</span>]
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-black/60 p-2.5 rounded-xl border border-slate-800 text-center text-xs font-mono text-alphagen-yellow">
+            results.multi_hand_landmarks contains 21 landmarks for each detected hand
+          </div>
+        </div>
+
+        <!-- Interactive Checklist on Right (6 cols) -->
+        <div class="col-span-6 bg-alphagen-purpleGhost border-2 border-alphagen-purplePale rounded-3xl p-5 flex flex-col justify-between">
+          <div>
+            <span class="text-xs font-extrabold text-alphagen-purple uppercase tracking-wider block mb-2">HAND PROCESSING CHECKLIST</span>
+
+            <div class="space-y-2 text-xs">
+              <label class="task-label bg-white border-2 border-alphagen-purplePale rounded-xl p-2.5 flex gap-3 items-center cursor-pointer hover:border-alphagen-purple transition">
+                <input type="checkbox" class="step8-check w-4 h-4 accent-purple-600 cursor-pointer" onchange="updateStep8Count()">
+                <span class="font-bold text-slate-800">Pass RGB frame into <code class="font-mono text-purple-700">hands.process(rgb_frame)</code></span>
+              </label>
+
+              <label class="task-label bg-white border-2 border-alphagen-purplePale rounded-xl p-2.5 flex gap-3 items-center cursor-pointer hover:border-alphagen-purple transition">
+                <input type="checkbox" class="step8-check w-4 h-4 accent-purple-600 cursor-pointer" onchange="updateStep8Count()">
+                <span class="font-bold text-slate-800">Check if <code class="font-mono text-purple-700">results.multi_hand_landmarks</code> is detected</span>
+              </label>
+
+              <label class="task-label bg-white border-2 border-alphagen-purplePale rounded-xl p-2.5 flex gap-3 items-center cursor-pointer hover:border-alphagen-purple transition">
+                <input type="checkbox" class="step8-check w-4 h-4 accent-purple-600 cursor-pointer" onchange="updateStep8Count()">
+                <span class="font-bold text-slate-800">Loop through detected hand landmarks with a <code class="font-mono text-purple-700">for</code> loop</span>
+              </label>
+
+              <label class="task-label bg-white border-2 border-alphagen-purplePale rounded-xl p-2.5 flex gap-3 items-center cursor-pointer hover:border-alphagen-purple transition">
+                <input type="checkbox" class="step8-check w-4 h-4 accent-purple-600 cursor-pointer" onchange="updateStep8Count()">
+                <span class="font-bold text-slate-800">Draw hand skeleton landmarks onto frame using <code class="font-mono text-purple-700">mp_draw.draw_landmarks</code></span>
+              </label>
+
+              <label class="task-label bg-white border-2 border-alphagen-purplePale rounded-xl p-2.5 flex gap-3 items-center cursor-pointer hover:border-alphagen-purple transition">
+                <input type="checkbox" class="step8-check w-4 h-4 accent-purple-600 cursor-pointer" onchange="updateStep8Count()">
+                <span class="font-bold text-slate-800">Access Index Finger Tip: <code class="font-mono text-purple-700 font-bold">landmark[8]</code></span>
+              </label>
+            </div>
+          </div>
+
+          <div id="step8-status" class="bg-white border border-alphagen-purplePale p-2 rounded-xl text-xs font-bold text-alphagen-purple text-center mt-2">
+            Progress: <span id="step8-count" class="text-alphagen-yellowDark font-extrabold">0 / 5</span> Tasks Completed
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= SLIDE 9: SCREEN COORDINATES & DRAW LOGIC ================= -->
+    <div id="slide-9" class="slide-panel bg-white justify-between">
+      <div>
+        <span class="text-xs uppercase font-extrabold tracking-wider text-alphagen-purple bg-alphagen-purpleGhost px-4 py-1.5 rounded-md border border-alphagen-purplePale">Coordinate &amp; Drawing Logic</span>
+        <h2 class="text-2xl font-extrabold text-alphagen-purple mt-2">Coordinate Math &amp; Line Drawing Logic</h2>
+       
+      </div>
+
+      <div class="grid grid-cols-12 gap-8 my-auto items-stretch">
+        <!-- Coordinate Conversion on Left (5 cols) -->
+        <div class="col-span-5 bg-alphagen-purpleGhost border-2 border-alphagen-purplePale rounded-3xl p-5 flex flex-col justify-between">
+          <div class="space-y-3">
+            <span class="text-xs font-extrabold text-alphagen-purple uppercase tracking-wider block">COORDINATE CONVERSION</span>
+
+            <div class="bg-white p-3 rounded-2xl border border-alphagen-purplePale space-y-2">
+              <span class="text-[11px] font-bold text-slate-700 block">1. X Coordinate :</span>
+              <div class="bg-slate-900 text-emerald-400 p-2 rounded-xl font-mono text-xs">
+                cx = int(index_tip.x * w)
+              </div>
+            </div>
+
+            <div class="bg-white p-3 rounded-2xl border border-alphagen-purplePale space-y-2">
+              <span class="text-[11px] font-bold text-slate-700 block">2. Y Coordinate:</span>
+              <label class="task-label bg-purple-50 border-2 border-purple-200 rounded-xl p-2.5 flex gap-2.5 items-center cursor-pointer">
+                <input type="checkbox" class="coord-check w-4 h-4 accent-purple-600 cursor-pointer" onchange="updateCoordCheck()">
+                <span class="text-xs font-bold text-purple-900">Calculate <code class="font-mono">cy</code> yourself using <code class="font-mono">index_tip.y * h</code></span>
+              </label>
+            </div>
+
+            <div class="bg-white p-3 rounded-2xl border border-alphagen-purplePale space-y-2">
+              <span class="text-[11px] font-bold text-slate-700 block">3. Fingertip Visual Feedback:</span>
+              <label class="task-label bg-purple-50 border-2 border-purple-200 rounded-xl p-2.5 flex gap-2.5 items-center cursor-pointer">
+                <input type="checkbox" class="coord-check w-4 h-4 accent-purple-600 cursor-pointer" onchange="updateCoordCheck()">
+                <span class="text-xs font-bold text-purple-900">Draw glowing circle indicator on finger at <code class="font-mono">(cx, cy)</code></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="bg-white border border-alphagen-purplePale p-2 rounded-xl text-xs font-bold text-alphagen-purple text-center mt-2">
+            Wrap with <code class="font-mono text-purple-700">int()</code> because pixel values must be whole numbers!
+          </div>
+        </div>
+
+        <!-- Step-by-Step Logic Instructions on Right (7 cols) -->
+        <div class="col-span-7 bg-alphagen-purpleGhost border-2 border-alphagen-purplePale rounded-3xl p-5 flex flex-col justify-between">
+          <div>
+            <span class="text-xs font-extrabold text-alphagen-purple uppercase tracking-wider block mb-2">DRAWING STEPS:</span>
+
+            <div class="space-y-1.5 text-xs">
+              <label class="task-label bg-white border border-alphagen-purplePale rounded-xl p-2 flex gap-2.5 items-center cursor-pointer hover:border-alphagen-purple transition">
+                <input type="checkbox" class="draw-logic-check w-4 h-4 accent-purple-600 cursor-pointer" onchange="updateDrawLogicCheck()">
+                <span class="font-medium text-slate-800">Check if <code class="font-mono font-bold text-purple-700">prev_x == 0 and prev_y == 0</code>: set <code class="font-mono font-bold text-purple-700">prev_x, prev_y = cx, cy</code></span>
+              </label>
+
+              <label class="task-label bg-white border border-alphagen-purplePale rounded-xl p-2 flex gap-2.5 items-center cursor-pointer hover:border-alphagen-purple transition">
+                <input type="checkbox" class="draw-logic-check w-4 h-4 accent-purple-600 cursor-pointer" onchange="updateDrawLogicCheck()">
+                <span class="font-medium text-slate-800">Otherwise, draw a line on canvas from <code class="font-mono font-bold text-purple-700">(prev_x, prev_y)</code> to <code class="font-mono font-bold text-purple-700">(cx, cy)</code></span>
+              </label>
+
+              <label class="task-label bg-white border border-alphagen-purplePale rounded-xl p-2 flex gap-2.5 items-center cursor-pointer hover:border-alphagen-purple transition">
+                <input type="checkbox" class="draw-logic-check w-4 h-4 accent-purple-600 cursor-pointer" onchange="updateDrawLogicCheck()">
+                <span class="font-medium text-slate-800">Update previous coordinates: <code class="font-mono font-bold text-purple-700">prev_x, prev_y = cx, cy</code></span>
+              </label>
+
+              <label class="task-label bg-white border border-alphagen-purplePale rounded-xl p-2 flex gap-2.5 items-center cursor-pointer hover:border-alphagen-purple transition">
+                <input type="checkbox" class="draw-logic-check w-4 h-4 accent-purple-600 cursor-pointer" onchange="updateDrawLogicCheck()">
+                <span class="font-medium text-slate-800">Combine <code class="font-mono font-bold text-purple-700">frame</code> and <code class="font-mono font-bold text-purple-700">canvas</code> using <code class="font-mono font-bold text-purple-700">cv2.add()</code></span>
+              </label>
+
+              <label class="task-label bg-white border border-alphagen-purplePale rounded-xl p-2 flex gap-2.5 items-center cursor-pointer hover:border-alphagen-purple transition">
+                <input type="checkbox" class="draw-logic-check w-4 h-4 accent-purple-600 cursor-pointer" onchange="updateDrawLogicCheck()">
+                <span class="font-medium text-slate-800">Display output window using <code class="font-mono font-bold text-purple-700">cv2.imshow()</code></span>
+              </label>
+
+              <label class="task-label bg-white border border-alphagen-purplePale rounded-xl p-2 flex gap-2.5 items-center cursor-pointer hover:border-alphagen-purple transition">
+                <input type="checkbox" class="draw-logic-check w-4 h-4 accent-purple-600 cursor-pointer" onchange="updateDrawLogicCheck()">
+                <span class="font-medium text-slate-800">When key <code class="font-mono font-bold text-purple-700">'c'</code> is pressed: clear canvas using <code class="font-mono font-bold text-purple-700">np.zeros()</code></span>
+              </label>
+
+              <label class="task-label bg-white border border-alphagen-purplePale rounded-xl p-2 flex gap-2.5 items-center cursor-pointer hover:border-alphagen-purple transition">
+                <input type="checkbox" class="draw-logic-check w-4 h-4 accent-purple-600 cursor-pointer" onchange="updateDrawLogicCheck()">
+                <span class="font-medium text-slate-800">When key <code class="font-mono font-bold text-purple-700">'q'</code> is pressed: break loop and release camera</span>
+              </label>
+            </div>
+          </div>
+
+          <div id="draw-checklist-status" class="mt-2 p-1.5 bg-white border border-alphagen-purplePale rounded-xl text-xs font-bold text-alphagen-purple text-center">
+            Progress: <span id="draw-logic-count" class="text-alphagen-yellowDark font-extrabold">0 / 7</span> Steps Implemented
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= SLIDE 10: FINAL MASTERY CHECK & CELEBRATION ================= -->
+    <div id="slide-10" class="slide-panel bg-white justify-between">
+      <div>
+        <span class="text-xs uppercase font-extrabold tracking-wider text-alphagen-purple bg-alphagen-purpleGhost px-4 py-1.5 rounded-md border border-alphagen-purplePale">Final Quiz</span>
+        <h2 class="text-2xl font-extrabold text-alphagen-purple mt-2">Knowledge Check &amp; Celebrate!</h2>
+      
+      </div>
+
+      <div class="space-y-3 my-auto">
+        <!-- Question 1: Index Landmark (Shuffled) -->
+        <div class="bg-alphagen-purpleGhost border-2 border-alphagen-purplePale p-3.5 rounded-2xl flex items-center justify-between">
+          <div class="max-w-md">
+            <h4 class="font-extrabold text-xs text-alphagen-nearBlack">1. What is the landmark index for the Index Finger Tip in MediaPipe?</h4>
+            <p class="text-[11px] text-alphagen-darkGrey mt-0.5">Which number represents our virtual pen tip?</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="checkFinalQuiz(this, false)" class="quiz-option font-mono">4 (Thumb Tip)</button>
+            <button onclick="checkFinalQuiz(this, true)" class="quiz-option font-mono">8 (Index Tip)</button>
+            <button onclick="checkFinalQuiz(this, false)" class="quiz-option font-mono">12 (Middle Tip)</button>
+            <button onclick="checkFinalQuiz(this, false)" class="quiz-option font-mono">0 (Wrist)</button>
+          </div>
+        </div>
+
+        <!-- Question 2: Confidence 0.7 (Shuffled) -->
+        <div class="bg-alphagen-purpleGhost border-2 border-alphagen-purplePale p-3.5 rounded-2xl flex items-center justify-between">
+          <div class="max-w-md">
+            <h4 class="font-extrabold text-xs text-alphagen-nearBlack">2. What does <code>min_detection_confidence = 0.7</code> mean?</h4>
+            <p class="text-[11px] text-alphagen-darkGrey mt-0.5">Model certainty threshold</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="checkFinalQuiz(this, false)" class="quiz-option">Detects 0.7 seconds faster</button>
+            <button onclick="checkFinalQuiz(this, true)" class="quiz-option">Requires 70% model confidence to confirm a hand</button>
+            <button onclick="checkFinalQuiz(this, false)" class="quiz-option">Hand must occupy 70% of screen</button>
+          </div>
+        </div>
+
+        <!-- Question 3: draw_landmarks function (Shuffled) -->
+        <div class="bg-alphagen-purpleGhost border-2 border-alphagen-purplePale p-3.5 rounded-2xl flex items-center justify-between">
+          <div class="max-w-md">
+            <h4 class="font-extrabold text-xs text-alphagen-nearBlack">3. What does <code>mp_draw.draw_landmarks()</code> do?</h4>
+            <p class="text-[11px] text-alphagen-darkGrey mt-0.5">Visual overlay purpose</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="checkFinalQuiz(this, false)" class="quiz-option">Erases background pixels</button>
+            <button onclick="checkFinalQuiz(this, false)" class="quiz-option">Saves landmark coordinates to disk</button>
+            <button onclick="checkFinalQuiz(this, true)" class="quiz-option">Draws the 21 joints and connection lines on the frame</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grand Celebration Button -->
+      <div>
+        <button onclick="triggerGrandCelebration()" class="w-full bg-alphagen-yellow hover:bg-alphagen-yellowDark text-alphagen-nearBlack font-extrabold py-3.5 rounded-2xl text-base btn-interactive shadow-lg flex items-center justify-center gap-3">
+          <i class="fa-solid fa-trophy text-alphagen-purple text-xl"></i>
+          <span>Celebrate Completion!</span>
+          <span>🎉</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom Navigation Control Bar -->
+  <div class="nav-bar">
+    <button id="prev-btn" class="nav-btn btn-interactive" onclick="prevSlide()" disabled>
+      <i class="fa-solid fa-arrow-left"></i>
+      <span>Previous</span>
+    </button>
+
+    <span class="text-xs font-semibold text-white/90">
+      Use Arrow Keys (← / →) or buttons to navigate slides
+    </span>
+
+    <button id="next-btn" class="nav-btn btn-interactive" onclick="handleNextOrFinish()">
+      <span id="next-btn-text">Next</span>
+      <i id="next-btn-icon" class="fa-solid fa-arrow-right"></i>
+    </button>
+  </div>
+</div>
+
+<!-- ================= JAVASCRIPT SYSTEM ================= -->
+<script>
+let currentSlide = 1;
+const totalSlides = 10;
+let soundEnabled = true;
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+/* Web Audio Synthesizer */
+function playSound(type) {
+  if (!soundEnabled) return;
+  try {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.connect(g);
+    g.connect(audioCtx.destination);
+    const now = audioCtx.currentTime;
+
+    if (type === 'correct') {
+      o.type = 'sine';
+      o.frequency.setValueAtTime(523, now);
+      o.frequency.exponentialRampToValueAtTime(659, now + 0.15);
+      g.gain.setValueAtTime(0.1, now);
+      g.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+      o.start();
+      o.stop(now + 0.3);
+    } else if (type === 'wrong') {
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(180, now);
+      o.frequency.linearRampToValueAtTime(110, now + 0.2);
+      g.gain.setValueAtTime(0.1, now);
+      g.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+      o.start();
+      o.stop(now + 0.25);
+    } else {
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(360, now);
+      o.frequency.exponentialRampToValueAtTime(720, now + 0.08);
+      g.gain.setValueAtTime(0.1, now);
+      g.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+      o.start();
+      o.stop(now + 0.08);
+    }
+  } catch (e) {}
+}
+
+function toggleAudio() {
+  soundEnabled = !soundEnabled;
+  const iconHtml = soundEnabled ? '<i class="fa-solid fa-volume-high"></i>' : '<i class="fa-solid fa-volume-xmark"></i>';
+  const topAudioBtn = document.getElementById('top-audio-btn');
+  const stageAudioBtn = document.getElementById('audio-btn');
+  if (topAudioBtn) topAudioBtn.innerHTML = soundEnabled ? '<i class="fa-solid fa-volume-high text-base"></i>' : '<i class="fa-solid fa-volume-xmark text-base"></i>';
+  if (stageAudioBtn) stageAudioBtn.innerHTML = iconHtml;
+}
+
+/* Confetti Celebrations */
+function triggerSuccessConfetti() {
+  playSound('correct');
+  if (typeof confetti === 'function') {
+    confetti({ particleCount: 75, spread: 60, origin: { y: 0.6 } });
+  }
+}
+
+function triggerGrandCelebration() {
+  playSound('correct');
+  if (typeof confetti === 'function') {
+    confetti({
+      particleCount: 160,
+      spread: 90,
+      origin: { y: 0.5 },
+      colors: ['#5E48C4', '#FFD071', '#59E4FB', '#ED5661', '#10B981']
+    });
+    setTimeout(() => {
+      confetti({ particleCount: 90, angle: 60, spread: 55, origin: { x: 0 } });
+      confetti({ particleCount: 90, angle: 120, spread: 55, origin: { x: 1 } });
+    }, 250);
+  }
+}
+
+/* Navigation System */
+function initHeaderDots() {
+  const c = document.getElementById('header-dots-container');
+  if (!c) return;
+  c.innerHTML = '';
+  for (let i = 1; i <= totalSlides; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot-indicator ' + (i === 1 ? 'active' : '');
+    d.onclick = () => goToSlide(i);
+    c.appendChild(d);
+  }
+}
+
+function updateSlideDisplay() {
+  document.querySelectorAll('.slide-panel').forEach((p, i) => p.classList.toggle('active', i + 1 === currentSlide));
+  document.querySelectorAll('.dot-indicator').forEach((d, i) => d.classList.toggle('active', i + 1 === currentSlide));
+
+  const counterPill = document.getElementById('slide-counter-pill');
+  const dropdown = document.getElementById('slide-dropdown');
+  const prevBtn = document.getElementById('prev-btn');
+  const nextBtn = document.getElementById('next-btn');
+  const nextBtnText = document.getElementById('next-btn-text');
+  const nextBtnIcon = document.getElementById('next-btn-icon');
+
+  if (counterPill) counterPill.innerText = `Slide ${currentSlide} / ${totalSlides}`;
+  if (dropdown) dropdown.value = currentSlide;
+  if (prevBtn) prevBtn.disabled = currentSlide === 1;
+
+  if (nextBtn && nextBtnText && nextBtnIcon) {
+    if (currentSlide === totalSlides) {
+      nextBtnText.innerText = 'Finish';
+      nextBtnIcon.className = 'fa-solid fa-flag-checkered';
+      nextBtn.classList.add('finish-btn');
+    } else {
+      nextBtnText.innerText = 'Next';
+      nextBtnIcon.className = 'fa-solid fa-arrow-right';
+      nextBtn.classList.remove('finish-btn');
+    }
+  }
+
+  if (currentSlide === 2) {
+    initAirDrawingCanvas();
+  }
+}
+
+function handleNextOrFinish() {
+  if (currentSlide === totalSlides) {
+    triggerGrandCelebration();
+  } else {
+    nextSlide();
+  }
+}
+
+function nextSlide() {
+  if (currentSlide < totalSlides) {
+    currentSlide++;
+    updateSlideDisplay();
+    playSound('pop');
+  }
+}
+
+function prevSlide() {
+  if (currentSlide > 1) {
+    currentSlide--;
+    updateSlideDisplay();
+    playSound('pop');
+  }
+}
+
+function goToSlide(n) {
+  if (n >= 1 && n <= totalSlides) {
+    currentSlide = n;
+    updateSlideDisplay();
+    playSound('pop');
+  }
+}
+
+function fitStageToScreen() {
+  const stage = document.querySelector('.slide-stage');
+  const nav = document.querySelector('.nav-bar');
+  if (!stage) return;
+  const availableWidth = window.innerWidth - 32;
+  if (availableWidth < 1280) {
+    const scale = availableWidth / 1280;
+    stage.style.transform = `scale(${scale})`;
+    stage.style.marginBottom = `-${720 * (1 - scale)}px`;
+    if (nav) nav.style.transform = `scale(${scale})`;
+  } else {
+    stage.style.transform = 'none';
+    stage.style.marginBottom = '0px';
+    if (nav) nav.style.transform = 'none';
+  }
+}
+
+/* ================= SLIDE 2: DRAGGABLE FINGER AIR CANVAS SIMULATION ================= */
+let simCanvas, simCtx;
+let simDrawing = false;
+let simPrevX = null, simPrevY = null;
+let simColor = '#59E4FB';
+let isDraggingFinger = false;
+
+function initAirDrawingCanvas() {
+  simCanvas = document.getElementById('air-draw-canvas');
+  if (!simCanvas) return;
+  simCtx = simCanvas.getContext('2d');
+
+  const fingerHandle = document.getElementById('finger-drag-handle');
+  const simBox = document.getElementById('air-sim-box');
+
+  fingerHandle.onmousedown = (e) => {
+    isDraggingFinger = true;
+    simDrawing = true;
+    e.preventDefault();
+  };
+
+  simBox.onmousemove = (e) => {
+    if (!isDraggingFinger) return;
+    const rect = simBox.getBoundingClientRect();
+    const boxX = e.clientX - rect.left;
+    const boxY = e.clientY - rect.top;
+
+    // Constrain to container
+    const clampedX = Math.max(15, Math.min(rect.width - 20, boxX));
+    const clampedY = Math.max(15, Math.min(rect.height - 20, boxY));
+
+    // Position finger emoji
+    fingerHandle.style.left = `${clampedX}px`;
+    fingerHandle.style.top = `${clampedY}px`;
+
+    // Map to canvas coordinate scale
+    const canX = (clampedX / rect.width) * simCanvas.width;
+    const canY = (clampedY / rect.height) * simCanvas.height;
+
+    if (simPrevX !== null && simPrevY !== null) {
+      simCtx.beginPath();
+      simCtx.moveTo(simPrevX, simPrevY);
+      simCtx.lineTo(canX, canY);
+      simCtx.strokeStyle = simColor;
+      simCtx.lineWidth = 6;
+      simCtx.lineCap = 'round';
+      simCtx.stroke();
+    }
+
+    simPrevX = canX;
+    simPrevY = canY;
+
+    const pill = document.getElementById('canvas-status-pill');
+    if (pill) pill.innerText = `FINGER AT: (X=${Math.round(canX)}, Y=${Math.round(canY)})`;
+  };
+
+  window.addEventListener('mouseup', () => {
+    if (isDraggingFinger) {
+      isDraggingFinger = false;
+      simPrevX = null;
+      simPrevY = null;
+      const pill = document.getElementById('canvas-status-pill');
+      if (pill) pill.innerText = 'CLICK & DRAG ☝️ TO DRAW';
+    }
+  });
+}
+
+function setSimColor(c) {
+  simColor = c;
+  playSound('pop');
+}
+
+function clearAirSimCanvas() {
+  if (!simCtx || !simCanvas) return;
+  simCtx.clearRect(0, 0, simCanvas.width, simCanvas.height);
+  simPrevX = null;
+  simPrevY = null;
+  const pill = document.getElementById('canvas-status-pill');
+  if (pill) pill.innerText = 'CANVAS CLEARED • DRAG ☝️ TO DRAW';
+  playSound('pop');
+}
+
+/* ================= SLIDE 3: MEDIAPIPE JOINT INSPECTOR ================= */
+function inspectJoint(id, name, desc) {
+  playSound('pop');
+  document.querySelectorAll('.joint-node').forEach(n => n.classList.remove('active-joint'));
+  
+  if (event && event.target) {
+    event.target.classList.add('active-joint');
+  }
+
+  document.getElementById('joint-id-display').innerText = id;
+  document.getElementById('joint-name-display').innerText = name;
+  document.getElementById('joint-desc-display').innerText = desc;
+  document.getElementById('joint-code-idx').innerText = id;
+
+  if (id === 8) {
+    triggerSuccessConfetti();
+  }
+}
+
+/* ================= SLIDE 4: CORE CONCEPTS CHECK ================= */
+function checkConceptQ(btn, isCorrect, qId) {
+  const card = btn.closest('.bg-alphagen-purpleGhost');
+  const fb = document.getElementById(`${qId}-fb`);
+  card.querySelectorAll('.quiz-option').forEach(b => b.classList.remove('selected-correct', 'selected-wrong'));
+
+  if (isCorrect) {
+    btn.classList.add('selected-correct');
+    fb.innerText = '✅ Correct! Exactly right.';
+    fb.className = 'text-[11px] font-bold mt-1 text-center text-emerald-700 block';
+    triggerSuccessConfetti();
+  } else {
+    btn.classList.add('selected-wrong');
+    fb.innerText = '❌ Incorrect. Review your OpenCV/NumPy references and try again!';
+    fb.className = 'text-[11px] font-bold mt-1 text-center text-rose-700 block';
+    playSound('wrong');
+  }
+}
+
+/* ================= SLIDE 5: SETUP CHECKLIST ================= */
+function updateSetupSteps() {
+  playSound('pop');
+  const checks = document.querySelectorAll('.step-check');
+  const completed = [...checks].filter(c => c.checked).length;
+  document.getElementById('setup-step-count').innerText = `${completed} / ${checks.length}`;
+
+  const pct = Math.round((completed / checks.length) * 100);
+  document.getElementById('setup-pct-badge').innerText = `${pct}%`;
+  document.getElementById('setup-progress-bar').style.width = `${pct}%`;
+
+  const status = document.getElementById('setup-checklist-status');
+  const hint = document.getElementById('setup-progress-hint');
+
+  if (completed === checks.length) {
+    status.innerHTML = '<span class="text-emerald-700 font-extrabold">🎉 All 7 Setup Tasks Completed! Ready to initialize MediaPipe!</span>';
+    status.className = 'mt-2 p-2 bg-emerald-50 border-2 border-emerald-300 rounded-xl text-xs font-bold text-center';
+    hint.innerText = 'All setup steps ready! Proceed to Slide 6.';
+    triggerSuccessConfetti();
+  } else {
+    status.innerHTML = `Progress: <span class="text-alphagen-yellowDark font-extrabold">${completed} / ${checks.length}</span> Tasks Completed`;
+    status.className = 'mt-2 p-2 bg-white border border-alphagen-purplePale rounded-xl text-xs font-bold text-alphagen-purple text-center';
+    hint.innerText = `${completed} of ${checks.length} steps checked. Keep going!`;
+  }
+}
+
+/* ================= SLIDE 6: STEP 6 INITIALIZATION CHECKBOXES ================= */
+function updateStep6Count() {
+  playSound('pop');
+  const checks = document.querySelectorAll('.step6-check');
+  const completed = [...checks].filter(c => c.checked).length;
+  const status = document.getElementById('step6-status');
+
+  if (completed === checks.length) {
+    status.innerHTML = '<span class="text-emerald-700 font-extrabold">🎉 Step 6 Initialized! Ready for the Camera Loop!</span>';
+    status.className = 'bg-emerald-50 border-2 border-emerald-300 p-2.5 rounded-xl text-xs font-bold text-center mt-2';
+    triggerSuccessConfetti();
+  } else {
+    status.innerHTML = `Progress: <span class="text-alphagen-yellowDark font-extrabold">${completed} / ${checks.length}</span> Initializations Checked`;
+    status.className = 'bg-white border border-alphagen-purplePale p-2.5 rounded-xl text-xs font-bold text-alphagen-purple text-center mt-2';
+  }
+}
+
+/* ================= SLIDE 7: LOOP & FLIP STEPS ================= */
+function updateLoopSteps() {
+  playSound('pop');
+  const checks = document.querySelectorAll('.loop-check');
+  const completed = [...checks].filter(c => c.checked).length;
+  document.getElementById('loop-step-count').innerText = `${completed} / ${checks.length}`;
+
+  const status = document.getElementById('loop-checklist-status');
+  if (completed === checks.length) {
+    status.innerHTML = '<span class="text-emerald-700 font-extrabold">🎉 Camera Loop & Flip Ready! Move to Landmark Processing!</span>';
+    status.className = 'mt-2 p-2 bg-emerald-50 border-2 border-emerald-300 rounded-xl text-xs font-bold text-center';
+    triggerSuccessConfetti();
+  } else {
+    status.innerHTML = `Progress: <span class="text-alphagen-yellowDark font-extrabold">${completed} / ${checks.length}</span> Milestones Completed`;
+    status.className = 'mt-2 p-2 bg-white border border-alphagen-purplePale rounded-xl text-xs font-bold text-alphagen-purple text-center';
+  }
+}
+
+let isFlippedPreview = true;
+function toggleFlipPreview() {
+  playSound('pop');
+  isFlippedPreview = !isFlippedPreview;
+  const hand = document.getElementById('flip-preview-hand');
+  const label = document.getElementById('flip-preview-label');
+
+  if (isFlippedPreview) {
+    hand.style.transform = 'scaleX(1)';
+    label.innerText = 'Flipped (Natural Selfie Mode)';
+    label.className = 'text-[11px] text-emerald-400 font-mono block mt-1';
+  } else {
+    hand.style.transform = 'scaleX(-1)';
+    label.innerText = 'Unflipped (Inverted Webcam Mode)';
+    label.className = 'text-[11px] text-rose-400 font-mono block mt-1';
+  }
+}
+
+/* ================= SLIDE 8: HAND PROCESSING ================= */
+function updateStep8Count() {
+  playSound('pop');
+  const checks = document.querySelectorAll('.step8-check');
+  const completed = [...checks].filter(c => c.checked).length;
+  document.getElementById('step8-count').innerText = `${completed} / ${checks.length}`;
+
+  const status = document.getElementById('step8-status');
+  if (completed === checks.length) {
+    status.innerHTML = '<span class="text-emerald-700 font-extrabold">🎉 All 5 Hand Processing Steps Checked!</span>';
+    status.className = 'bg-emerald-50 border-2 border-emerald-300 p-2 rounded-xl text-xs font-bold text-center mt-2';
+    triggerSuccessConfetti();
+  } else {
+    status.innerHTML = `Progress: <span class="text-alphagen-yellowDark font-extrabold">${completed} / ${checks.length}</span> Tasks Completed`;
+    status.className = 'bg-white border border-alphagen-purplePale p-2 rounded-xl text-xs font-bold text-alphagen-purple text-center mt-2';
+  }
+}
+
+/* ================= SLIDE 9: DRAW & COORD CHECKLISTS ================= */
+function updateCoordCheck() {
+  playSound('pop');
+  const checks = document.querySelectorAll('.coord-check');
+  const allDone = [...checks].every(c => c.checked);
+  if (allDone) {
+    triggerSuccessConfetti();
+  }
+}
+
+function updateDrawLogicCheck() {
+  playSound('pop');
+  const checks = document.querySelectorAll('.draw-logic-check');
+  const completed = [...checks].filter(c => c.checked).length;
+  document.getElementById('draw-logic-count').innerText = `${completed} / ${checks.length}`;
+
+  const status = document.getElementById('draw-checklist-status');
+  if (completed === checks.length) {
+    status.innerHTML = '<span class="text-emerald-700 font-extrabold">🎉 All 7 Drawing Logic Steps Ready to Test in Python!</span>';
+    status.className = 'mt-2 p-1.5 bg-emerald-50 border-2 border-emerald-300 rounded-xl text-xs font-bold text-center';
+    triggerSuccessConfetti();
+  } else {
+    status.innerHTML = `Progress: <span class="text-alphagen-yellowDark font-extrabold">${completed} / ${checks.length}</span> Steps Implemented`;
+    status.className = 'mt-2 p-1.5 bg-white border border-alphagen-purplePale rounded-xl text-xs font-bold text-alphagen-purple text-center';
+  }
+}
+
+/* ================= SLIDE 10: FINAL QUIZ ================= */
+function checkFinalQuiz(btn, isCorrect) {
+  const row = btn.closest('.flex');
+  row.querySelectorAll('.quiz-option').forEach(b => b.classList.remove('selected-correct', 'selected-wrong'));
+
+  if (isCorrect) {
+    btn.classList.add('selected-correct');
+    playSound('correct');
+  } else {
+    btn.classList.add('selected-wrong');
+    playSound('wrong');
+  }
+}
+
+/* Global Listeners */
+document.addEventListener('keydown', e => {
+  if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
+  if (e.key === 'ArrowRight') handleNextOrFinish();
+  if (e.key === 'ArrowLeft') prevSlide();
+});
+
+window.addEventListener('resize', fitStageToScreen);
+
+window.addEventListener('DOMContentLoaded', () => {
+  currentSlide = 1;
+  initHeaderDots();
+  updateSlideDisplay();
+  fitStageToScreen();
+});
+</script>
+</body>
+</html>
